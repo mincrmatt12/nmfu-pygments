@@ -35,7 +35,10 @@ nmfu_math_exprs = [
     (r"\b\$\w+", Name.Variable.Magic),
     (r"(?<=\w)\.len", Name.Variable.Magic),
 
-    *nmfu_num_exprs
+    *nmfu_num_exprs,
+
+    (r'[A-Z0-9_]+', Name.Constant),
+    (r'\w+', Name),
 ]
 
 class NmfuLexer(RegexLexer):
@@ -74,21 +77,23 @@ class NmfuLexer(RegexLexer):
             (nmfu_conds, Keyword, "if_elif"),
 
             # math
-            (r"\[", Text, "math_expr"),
+            (r"\[", Punctuation, "math_expr"),
             
-            # fallback
+            # fallback (names + text)
+            (r'[A-Z0-9_]+', Name.Constant),
+            (r'\w+', Name),
             ('.', Text)
         ],
         "if_elif": [
             (r'\s+', Text),
             *nmfu_math_exprs,
-            (r'\{', Text, "#pop"),
+            (r'\{', Punctuation, "#pop"),
             ('.', Text)
         ],
         "math_expr": [
             (r'\s+', Text),
             *nmfu_math_exprs,
-            (r'\]', Text, "#pop"),
+            (r'\]', Punctuation, "#pop"),
             ('.', Text)
         ],
         # output declaration
@@ -97,13 +102,15 @@ class NmfuLexer(RegexLexer):
             # we've already read an "out", now we want type stuff
             (nmfu_outtype, Keyword.Type),
             (r'(?<=int)\b{', Text, 'out_int'),
-            (r'(?<=str)\b(\[)(\d+)(\])', bygroups(Text, Number, Text)),
+            (r'(?<=str)\b(\[)(\d+)(\])', bygroups(Punctuation, Number, Punctuation)),
             (r'=', Operator, "#pop"),
-            (r';', Text, "#pop")
+            (r';', Punctuation, "#pop"),
+            (r'\w+', Name.Variable),
+            ('.', Text)
         ],
         'out_int': [
             (r'\s+', Text),
-            (r'}', Text, "#pop"),
+            (r'}', Punctuation, "#pop"),
             (r'(size)(\s+)(\d+)', bygroups(Keyword.Type, Text, Number)),
             (r'(un)?signed', Keyword.Type),
             ('.', Text)
