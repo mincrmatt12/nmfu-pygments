@@ -9,7 +9,7 @@ nmfu_conds = kwds("if elif")
 nmfu_defwords = kwds("parser macro hook finishcode yieldcode")
 nmfu_bool = kwds("true false")
 nmfu_catch = kwds("nomatch outofspace")
-nmfu_outtype = kwds("int str raw bool enum unterminated")
+nmfu_outtype = kwds("int str raw bool enum")
 
 nmfu_num_exprs = [
     (r"\b[+\-]?\d+", Number.Integer),
@@ -33,10 +33,11 @@ nmfu_math_exprs = [
     (r"\!", Operator),
 
     (r"\b\$\w+", Name.Variable.Magic),
-    (r"(?<=\w)\.len", Name.Variable.Magic),
+    (r"(?<=\w)\.len", Name.Builtin),
 
     *nmfu_num_exprs,
 
+    (r'\(|\)', Punctuation),
     (r'[A-Z0-9_]+', Name.Constant),
     (r'\w+', Name),
 ]
@@ -54,6 +55,7 @@ class NmfuLexer(RegexLexer):
             (nmfu_kwds, Keyword),
             (nmfu_defwords, Keyword.Declaration),
             (nmfu_bool, Keyword.Constant),
+            (nmfu_catch, Name.Exception),
             (r"^\s*out\b", Keyword.Declaration, "out"),
 
             # greedy case
@@ -65,6 +67,7 @@ class NmfuLexer(RegexLexer):
             # macro call
             (r"\b\w+(?=\s*\()", Name.Function),
 
+            (r'\+?=', Operator),
             *nmfu_num_exprs,
 
             # regex
@@ -82,6 +85,7 @@ class NmfuLexer(RegexLexer):
             # fallback (names + text)
             (r'[A-Z0-9_]+', Name.Constant),
             (r'\w+', Name),
+            (r'\{|\}', Punctuation),
             ('.', Text)
         ],
         "if_elif": [
@@ -101,18 +105,22 @@ class NmfuLexer(RegexLexer):
             (r'\s+', Text),
             # we've already read an "out", now we want type stuff
             (nmfu_outtype, Keyword.Type),
+            ("unterminated", Name.Decorator),
             (r'(?<=int)\b{', Text, 'out_int'),
             (r'(?<=str)\b(\[)(\d+)(\])', bygroups(Punctuation, Number, Punctuation)),
             (r'=', Operator, "#pop"),
             (r';', Punctuation, "#pop"),
+            (r'[A-Z0-9_]+', Name.Constant),
             (r'\w+', Name.Variable),
+            (r'\{\|}', Punctuation),
             ('.', Text)
         ],
         'out_int': [
             (r'\s+', Text),
             (r'}', Punctuation, "#pop"),
-            (r'(size)(\s+)(\d+)', bygroups(Keyword.Type, Text, Number)),
-            (r'(un)?signed', Keyword.Type),
+            (r'(size)(\s+)(\d+)', bygroups(Name.Decorator, Text, Number)),
+            (r'(un)?signed', Name.Decorator),
+            (r',', Punctuation),
             ('.', Text)
         ],
     }
